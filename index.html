@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MIPS Pipeline Simulator</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="app-wrapper">
+
+  <!-- ── Top bar ─────────────────────────────────────────── -->
+  <header class="top-bar">
+    <span class="logo">PIPE<span>SIM</span></span>
+    <span class="breadcrumb">/ mips / configurable-pipeline / hazard-analysis</span>
+    <span class="spacer"></span>
+    <span class="version">v1.0.0</span>
+  </header>
+
+  <!-- ── Main layout ─────────────────────────────────────── -->
+  <div class="main-content">
+
+    <!-- Left: input panel -->
+    <aside class="input-panel">
+
+      <div class="panel-header">
+        <span class="dot"></span>
+        <span class="panel-title">Input</span>
+      </div>
+
+      <div class="config-panel">
+        <div class="control-label">Pipeline</div>
+        <div class="segmented" role="group" aria-label="Pipeline stage count">
+          <button id="stage-4-btn" class="segment active" type="button">4 Stage</button>
+          <button id="stage-5-btn" class="segment" type="button">5 Stage</button>
+        </div>
+
+        <label class="switch-row" for="forwarding-toggle">
+          <span>
+            <span class="switch-title">Forwarding</span>
+            <span class="switch-copy">Use bypass paths during scheduling</span>
+          </span>
+          <input id="forwarding-toggle" type="checkbox" checked />
+          <span class="switch-ui" aria-hidden="true"></span>
+        </label>
+      </div>
+
+      <!-- Syntax reference -->
+      <div class="syntax-hint">
+        <div class="hint-title">Accepted formats</div>
+        <div class="hint-row"><code>add $t0, $t1, $t2</code></div>
+        <div class="hint-row"><code>sub $t3, $t0, $t4</code></div>
+        <div class="hint-row"><code>lw  $t0, 0($t1)</code></div>
+        <div class="hint-row"><code>sw  $t0, 0($t3)</code></div>
+        <div class="hint-row"><code>ori $t5, $t6, 7</code></div>
+        <div class="hint-row" style="margin-top:4px; color:#555;">
+          One instruction per line. // comments ok.
+        </div>
+      </div>
+
+      <!-- Examples dropdown -->
+      <div class="examples-row">
+        <label for="examples-menu">Load example</label>
+        <select id="examples-menu"></select>
+      </div>
+
+      <!-- Code editor -->
+      <div class="editor-area">
+        <label for="editor">Instructions</label>
+        <textarea
+          id="editor"
+          spellcheck="false"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          placeholder="add $t0, $t1, $t2&#10;sub $t3, $t0, $t4"
+        ></textarea>
+      </div>
+
+      <!-- Error output -->
+      <div id="error-box"></div>
+
+      <!-- Action buttons -->
+      <div class="actions">
+        <button id="run-btn"   class="btn btn-primary">▶ Build</button>
+        <button id="clear-btn" class="btn btn-secondary">Clear</button>
+      </div>
+
+      <section class="simulation-controls" aria-label="Simulation controls">
+        <div class="sim-title"><span class="sim-index">04</span> Simulation Controls</div>
+        <div class="sim-stats">
+          <div>
+            <span>Current</span>
+            <strong id="current-cycle">0</strong>
+          </div>
+          <div>
+            <span>Total</span>
+            <strong id="total-cycles">-</strong>
+          </div>
+          <div>
+            <span>Stalls</span>
+            <strong id="stall-count">0</strong>
+          </div>
+        </div>
+        <div class="sim-buttons">
+          <button id="step-btn" class="btn btn-step" type="button" disabled>├ Step</button>
+          <button id="auto-btn" class="btn btn-auto" type="button" disabled>▷▷ Auto-Run</button>
+          <button id="reset-btn" class="btn btn-reset" type="button" disabled>↺ Reset</button>
+        </div>
+        <div class="sim-help">STEP: one cycle at a time | AUTO: 600ms/cycle</div>
+      </section>
+
+    </aside>
+
+    <!-- Right: output panel -->
+    <main class="output-panel">
+
+      <div class="panel-header">
+        <span class="dot" style="background:var(--amber); box-shadow:0 0 6px var(--amber);"></span>
+        <span class="panel-title" style="color:var(--amber);">Pipeline Output</span>
+      </div>
+
+      <div id="output-area">
+        <!-- Empty state -->
+        <div class="empty-state">
+          <div class="ascii-art">
+██████╗ ██╗██████╗ ███████╗
+██╔══██╗██║██╔══██╗██╔════╝
+██████╔╝██║██████╔╝█████╗
+██╔═══╝ ██║██╔═══╝ ██╔══╝
+██║     ██║██║     ███████╗
+╚═╝     ╚═╝╚═╝     ╚══════╝
+          </div>
+          <p>Enter MIPS instructions on the left,<br>then hit Build (or Ctrl+Enter).</p>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-chip cell-if">IF</div>
+          <span>Instruction Fetch</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-chip cell-id">ID</div>
+          <span>Decode</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-chip cell-ex">EX</div>
+          <span>Execute</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-chip cell-mem">MEM</div>
+          <span>Memory</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-chip cell-wb">WB</div>
+          <span>Write Back</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-chip cell-st">ST</div>
+          <span>Stall</span>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- ── Status bar ───────────────────────────────────────── -->
+  <footer class="status-bar">
+    <span id="status-bar">▸ ready</span>
+    <span class="status-hint">ctrl+enter to run</span>
+  </footer>
+
+</div>
+
+<!-- Scripts: logic first, then UI -->
+<script src="pipeline_logic.js"></script>
+<script src="pipeline_ui.js"></script>
+
+</body>
+</html>
