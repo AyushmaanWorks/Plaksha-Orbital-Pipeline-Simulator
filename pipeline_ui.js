@@ -11,7 +11,6 @@
   const editor = $("editor");
   const runBtn = $("run-btn");
   const clearBtn = $("clear-btn");
-  const examplesMenu = $("examples-menu");
   const outputArea = $("output-area");
   const statusBar = $("status-bar");
   const errorBox = $("error-box");
@@ -24,33 +23,6 @@
   const currentCycleEl = $("current-cycle");
   const totalCyclesEl = $("total-cycles");
   const stallCountEl = $("stall-count");
-
-  const EXAMPLES = {
-    tc1: {
-      label: "TC1 - Basic RAW (add -> sub)",
-      code: "add $t0, $t1, $t2\nsub $t3, $t0, $t4",
-    },
-    tc2: {
-      label: "TC2 - Skipped RAW (add -> and -> sub)",
-      code: "add $t0, $t1, $t2\nand $t5, $t6, $t7\nsub $t3, $t0, $t4",
-    },
-    tc3: {
-      label: "TC3 - Load-Use (lw -> add)",
-      code: "lw $t0, 0($t1)\nadd $t2, $t0, $t3",
-    },
-    tc4: {
-      label: "TC4 - Load-Use with gap",
-      code: "lw $t0, 0($t1)\nori $t5, $t6, 7\nadd $t2, $t0, $t3",
-    },
-    tc5: {
-      label: "TC5 - Chained RAW",
-      code: "add $t0, $t1, $t2\nadd $t0, $t0, $t3\nsub $t4, $t0, $t5",
-    },
-    tc6: {
-      label: "TC6 - Store after add",
-      code: "add $t0, $t1, $t2\nsw $t0, 0($t3)",
-    },
-  };
 
   const STAGE_CLASS = {
     IF: "cell-if",
@@ -73,16 +45,6 @@
     autoTimer: null,
     logLines: [],
   };
-
-  function populateExamples() {
-    examplesMenu.innerHTML = '<option value="">-- load example --</option>';
-    Object.entries(EXAMPLES).forEach(([key, ex]) => {
-      const opt = document.createElement("option");
-      opt.value = key;
-      opt.textContent = ex.label;
-      examplesMenu.appendChild(opt);
-    });
-  }
 
   function selectedResult(analysis) {
     return state.forwarding ? analysis.withForwarding : analysis.noForwarding;
@@ -437,9 +399,8 @@
   }
 
   function init() {
-    populateExamples();
     syncControls();
-    setStatus("ready - enter instructions or load an example");
+    setStatus("ready - enter instructions");
 
     runBtn.addEventListener("click", build);
     clearBtn.addEventListener("click", clearAll);
@@ -449,15 +410,6 @@
     stage4Btn.addEventListener("click", () => setStageCount(4));
     stage5Btn.addEventListener("click", () => setStageCount(5));
     forwardingToggle.addEventListener("change", e => setForwarding(e.target.checked));
-
-    examplesMenu.addEventListener("change", e => {
-      const ex = EXAMPLES[e.target.value];
-      if (ex) {
-        editor.value = ex.code;
-        editor.focus();
-      }
-      examplesMenu.value = "";
-    });
 
     editor.addEventListener("keydown", e => {
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
